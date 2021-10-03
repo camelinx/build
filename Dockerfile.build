@@ -1,0 +1,28 @@
+FROM docker.io/camelinx/builder:10-03-2021 AS build
+
+LABEL maintainer="Sudarsan Raghavan <camelinx@gmail.com>"
+LABEL image-type=build
+
+ENV container docker
+
+ENV build_dir /usr/local/nginx
+
+ENV luajit_lib /usr/local/luajit2.1/lib
+ENV luajit_inc /usr/local/luajit2.1/include/luajit-2.1
+
+ENV openssl_ver 1.1.1l
+
+ENV nginx_configure '--prefix=/usr/local/nginx --with-ld-opt="-Wl,-rpath,${luajit_lib}" --without-select_module --without-poll_module --with-http_ssl_module --with-http_v2_module --with-http_sub_module --with-stream --with-stream_ssl_module --with-http_realip_module --with-stream_realip_module --with-openssl=${build_dir}/openssl/openssl-${openssl_ver} --with-openssl-opt=enable-tls1_3'
+
+ENV nginx_configure_modules "--add-module=${build_dir}/sources/ngx_devel_kit --add-module=${build_dir}/sources/lua-nginx-module --add-module=${build_dir}/sources/ngx_http_lookuplibs_module"
+
+RUN mkdir -p ${build_dir}
+RUN mkdir -p ${build_dir}/openssl
+RUN cd ${build_dir}/openssl && curl -s https://www.openssl.org/source/openssl-${openssl_ver}.tar.gz -o - | tar zx
+RUN mkdir -p ${build_dir}/sources && \
+    cd ${build_dir}/sources && \
+    git clone https://github.com/camelinx/nginx.git && \
+    git clone https://github.com/vision5/ngx_devel_kit.git && \
+    git clone https://github.com/camelinx/lua-nginx-module.git && \
+    git clone https://github.com/camelinx/ngx_http_lookuplibs_module.git
+RUN cd ${build_dir}/sources/nginx && LUAJIT_LIB=${luajit_lib} LUAJIT_INC=${luajit_inc} ./auto/configure ${nginx_configure} ${nginx_configure_modules} && make
