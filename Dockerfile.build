@@ -26,8 +26,12 @@ RUN mkdir -p ${build_dir}/openssl
 RUN cd ${build_dir}/openssl && curl -s https://www.openssl.org/source/openssl-${openssl_ver}.tar.gz -o - | tar zx
 RUN mkdir -p ${build_dir}/sources && \
     cd ${build_dir}/sources && \
+    git clone https://github.com/camelinx/ngx_http_lookuplibs_module.git && \
     git clone https://github.com/camelinx/nginx.git && \
     git clone https://github.com/vision5/ngx_devel_kit.git && \
-    git clone https://github.com/camelinx/lua-nginx-module.git && \
-    git clone https://github.com/camelinx/ngx_http_lookuplibs_module.git
+    git clone https://github.com/openresty/lua-nginx-module.git && \
+    git clone https://github.com/openresty/lua-resty-core.git && \
+    cd lua-resty-core && make install && \
+    git clone https://github.com/openresty/lua-resty-lrucache.git && \
+    cd lua-resty-lrucache && make install
 RUN cd ${build_dir}/sources/nginx && LUAJIT_LIB=${luajit_lib} LUAJIT_INC=${luajit_inc} ./auto/configure --prefix=${nginx_install_prefix} --with-ld-opt="${nginx_ld_opts}" ${nginx_configure_options} ${nginx_openssl_options} ${nginx_configure_modules} && make
